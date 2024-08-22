@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import usePreviewImg from "../hooks/usePreviewImg";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"
 
 const PostPage = () => {
     const [title, setTitle] = useState("");
     const [postBody, setPostBody] = useState("");
     const imageRef = useRef(null);
     const { handleImageChange, selectedFile, selectedImage} = usePreviewImg();
+    const navigate = useNavigate();
 
     const onSubmitForm = async e => {
         e.preventDefault();
@@ -17,16 +19,11 @@ const PostPage = () => {
             formData.append("image", selectedFile)
             await axios.post("http://localhost:5000/posts", formData, {headers: {"Content-Type": "multipart/form-data"}});
 
-
-            // const body = { title, postBody, imageName };
-            // const response = await fetch("http://localhost:5000/posts", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify(body)
-            // });
         } catch (error) {
             console.log(error);
         }
+
+        navigate('/');
     };
 
     return (
