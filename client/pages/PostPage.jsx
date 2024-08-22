@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import usePreviewImg from "../hooks/usePreviewImg";
 
 const PostPage = () => {
     const [title, setTitle] = useState("");
     const [postBody, setPostBody] = useState("");
+    const imageRef = useRef(null);
+    const { handleImageChange, selectedFile} = usePreviewImg();
+
+    console.log(selectedFile);
 
     const onSubmitForm = async e => {
         e.preventDefault();
@@ -27,6 +32,7 @@ const PostPage = () => {
             value={title}
             onChange={e => setTitle(e.target.value)}
             />
+
             <textarea 
             name="" 
             id="" 
@@ -35,6 +41,10 @@ const PostPage = () => {
             value={postBody}
             onChange={e => setPostBody(e.target.value)}
             />
+
+            <input type="file" accept="image/*" ref={imageRef} onChange={handleImageChange}/>
+            <img src={selectedFile} style={{ maxWidth: '30%' }} />
+
             <button>Post</button>
         </form>
         
