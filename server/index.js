@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import pool from "./db.js";
-import { S3Client, PutObjectCommand, BucketAccelerateStatus } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 import crypto from "crypto";
 
@@ -66,6 +67,17 @@ app.post("/posts", upload.single("image"), async (req, res) => {
 app.get("/posts", async (req, res) => {
     try {
         const allPosts = await pool.query("SELECT * FROM posts");
+
+        for (const post of allPosts.rows) {
+            const getObjectParams = {
+                Bucket: bucketName,
+                Key: post.image_name,
+            }
+            const command = new GetObjectCommand(getObjectParams);
+            const url = await getSignedUrl(s3, command, {expiresIn: 3600});
+            post.imageUrl = url;
+        }
+
         res.json(allPosts.rows)
     } 
     catch (error) {
