@@ -4,8 +4,11 @@ import multer from "multer";
 import pool from "./db.js";
 import { S3Client, PutObjectCommand, BucketAccelerateStatus } from "@aws-sdk/client-s3";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
+
+const randomImageName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
 
 const bucketName = process.env.BUCKET_NAME;
 const bucketRegion = process.env.BUCKET_REGION;
@@ -31,12 +34,13 @@ const upload = multer({storage: storage});
 
 
 app.post("/posts", upload.single("image"), async (req, res) => {
+    const imageName = randomImageName();
+    console.log(imageName);
     console.log(req.body);
-    console.log(req.file);
 
     const params = {
         Bucket: bucketName,
-        Key: req.file.originalname,
+        Key: imageName,
         Body: req.file.buffer,
         ContentType: req.file.mimetype,
     }
@@ -44,19 +48,19 @@ app.post("/posts", upload.single("image"), async (req, res) => {
 
     await s3.send(command);
 
-    // try {
-    //     const { title, postBody, imageName } = req.body;
-    //     const newPost = await pool.query(
-    //         "INSERT INTO posts (post_title, post_body, image_name) VALUES ($1, $2, $3) RETURNING *",
-    //         [title, postBody, imageName]
-    //     );
+    try {
+        const { title, postBody } = req.body;
+        const newPost = await pool.query(
+            "INSERT INTO posts (post_title, post_body, image_name) VALUES ($1, $2, $3) RETURNING *",
+            [title, postBody, imageName]
+        );
 
-    //     res.json(newPost.rows[0]);
-    // }
-    // catch (error) {
-    //     console.log(error);
-    // }
-    res.send();
+        res.json(newPost.rows[0]);
+    }
+    catch (error) {
+        console.log(error);
+    }
+
 });
 
 app.get("/posts", async (req, res) => {
