@@ -2,6 +2,23 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import pool from "./db.js";
+import { S3Client, PutObjectCommand, BucketAccelerateStatus } from "@aws-sdk/client-s3";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const bucketName = process.env.BUCKET_NAME;
+const bucketRegion = process.env.BUCKET_REGION;
+const accessKey = process.env.ACCESS_KEY;
+const secretAccessKey = process.env.SECRET_ACCESS_KEY;
+
+const s3 = new S3Client({
+    region: bucketRegion,
+    credentials: {
+      accessKeyId: accessKey,
+      secretAccessKey: secretAccessKey
+    }
+});
 
 const app = express();
 
@@ -16,7 +33,17 @@ const upload = multer({storage: storage});
 app.post("/posts", upload.single("image"), async (req, res) => {
     console.log(req.body);
     console.log(req.file);
-    
+
+    const params = {
+        Bucket: bucketName,
+        Key: req.file.originalname,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+    }
+    const command = new PutObjectCommand(params);
+
+    await s3.send(command);
+
     // try {
     //     const { title, postBody, imageName } = req.body;
     //     const newPost = await pool.query(
